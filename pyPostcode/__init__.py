@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
 '''
 pyPostcode by Stefan Jansen
 pyPostcode is an api wrapper for http://postcodeapi.nu
