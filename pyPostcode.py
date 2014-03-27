@@ -7,12 +7,15 @@ pyPostcode by Stefan Jansen
 pyPostcode is an api wrapper for http://postcodeapi.nu
 '''
 
-import sys
-import json
 import httplib
+import json
+import re
 
 
-__version__ = '0.1'
+__version__ = '0.2'
+
+
+_santize_re = re.compile('[^.0-9a-zA-Z]')
 
 
 class pyPostcodeException(Exception):
@@ -69,23 +72,44 @@ class Api(object):
 
         return data
 
-    def getaddress(self, postcode, house_number=None):
-        if house_number == None:
-            house_number = ''
+    def getaddress(self, postcode, house_number=None, bag=False):
+        if not postcode:
+            return None
+        postcode = _santize_re.sub('', str(postcode).upper())
 
-        path = '/{0}/{1}'.format(
-            str(postcode),
-            str(house_number))
+        args = []
+
+        if len(postcode) in [4, 5, 6]:
+            args.append('type=p{0}'.format(len(postcode)))
+        else:
+            # TODO: throw an exception to inform the user?
+            return None
+
+        if not house_number:
+            house_number = ''
+        else:
+            house_number = _santize_re.sub('', str(house_number).lower())
+
+        if bag:
+            args.append('view=bag')
+
+        path = '/{0}{1}{2}'.format(
+            postcode,
+            '/{0}'.format(house_number) if house_number else '',
+            '?{0}'.format('&'.join(args)) if args else '')
+        print 'XXX', path
 
         try:
             data = self.request(path)
+        except pyPostcodeException as ex:
+            print ex.id, ex.message
+            data = None
         except Exception:
             data = None
 
-        if data is not None:
-            return Resource(data)
-        else:
-            return False
+        if not data:
+            return None
+        return Resource(data)
 
 
 class Resource(object):
